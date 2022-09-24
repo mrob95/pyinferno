@@ -9,26 +9,43 @@ on:
 
 jobs:
   linux:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["macos-latest", "ubuntu-latest", "windows-latest"]
+        python-version: [
+          "3.7",
+          "3.8",
+          "3.9",
+          "3.10",
+        ]
     steps:
     - uses: actions/checkout@v3
+    - uses: Swatinem/rust-cache@v1
+      with:
+        key: cargo-${{ matrix.os }}
     - uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
-    - run: |
+        python-version: ${{ matrix.python-version }}
+        cache: "pip"
+        cache-dependency-path: '**/dev-requirements.txt'
+    - name: Install requirements
+      run: |
         pip install -r dev-requirements.txt
         pip install .
-        pytest
-    - uses: messense/maturin-action@v1
-      with:
-        manylinux: auto
-        command: build
-        args: --release --sdist -o dist --find-interpreter
-    - name: Upload wheels
-      uses: actions/upload-artifact@v2
-      with:
-        name: wheels
-        path: dist
+    - name: Run tests
+      run: pytest
+
+    # - uses: messense/maturin-action@v1
+    #   with:
+    #     manylinux: auto
+    #     command: build
+    #     args: --release --sdist -o dist --find-interpreter
+    # - name: Upload wheels
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: wheels
+    #     path: dist
 
   # windows:
   #   runs-on: windows-latest
