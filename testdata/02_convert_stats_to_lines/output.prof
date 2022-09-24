@@ -1,4 +1,4 @@
 /home/mike/profiling/test_cp.py:a:12 2
 /home/mike/profiling/test_cp.py:a:12;/home/mike/profiling/test_cp.py:b:9 4
 /home/mike/profiling/test_cp.py:a:12;/home/mike/profiling/test_cp.py:b:9;/home/mike/profiling/test_cp.py:c:6 7
-/home/mike/profiling/test_cp.py:a:12;/home/mike/profiling/test_cp.py:b:9;/home/mike/profiling/test_cp.py:c:6;~:<built-in method time.sleep>:0 500554
+/home/mike/profiling/test_cp.py:a:12;/home/mike/profiling/test_cp.py:b:9;/home/mike/profiling/test_cp.py:c:6;<built-in method time.sleep> 500554
