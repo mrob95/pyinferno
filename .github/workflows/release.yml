@@ -8,6 +8,7 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
     - uses: messense/maturin-action@v1
       with:
         manylinux: auto
@@ -37,7 +38,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: messense/maturin-action@v1b
+    - uses: messense/maturin-action@v1
       with:
         command: build
         args: --release -o dist --universal2 --find-interpreter
