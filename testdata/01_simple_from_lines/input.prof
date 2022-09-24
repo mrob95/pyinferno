@@ -1,0 +1,4 @@
+/home/mike/profiling/test_cp.py:12:a 4
+/home/mike/profiling/test_cp.py:12:a;/home/mike/profiling/test_cp.py:9:b 6
+/home/mike/profiling/test_cp.py:12:a;/home/mike/profiling/test_cp.py:9:b;/home/mike/profiling/test_cp.py:6:c 18
+/home/mike/profiling/test_cp.py:12:a;/home/mike/profiling/test_cp.py:9:b;/home/mike/profiling/test_cp.py:6:c;~:0:<built-in method time.sleep> 500573
