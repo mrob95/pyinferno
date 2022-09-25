@@ -25,6 +25,7 @@
 from collections import Counter
 from typing import Dict, Tuple
 
+
 def calc_callers(stats: Dict[Tuple, Tuple]):
     roots = set()
     funcs = {}

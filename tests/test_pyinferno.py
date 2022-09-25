@@ -1,7 +1,10 @@
-from pathlib import Path
-import pytest
 import time
-from pyinferno import InfernoProfiler, flamegraph_from_lines, lines_from_stats, InfernoError
+from pathlib import Path
+
+import pytest
+
+from pyinferno import (InfernoError, InfernoProfiler, flamegraph_from_lines,
+                       lines_from_stats)
 
 
 def test_simple_from_lines():

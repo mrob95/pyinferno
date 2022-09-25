@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
 import pstats
 from cProfile import Profile
-from .pyinferno import flamegraph_from_lines, InfernoError
+from pathlib import Path
+
 from .converter import lines_from_stats
+from .pyinferno import InfernoError, flamegraph_from_lines
+
 
 class InfernoProfiler:
     def __init__(self, out_path: str | Path | None = None):
