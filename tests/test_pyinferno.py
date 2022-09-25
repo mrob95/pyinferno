@@ -1,6 +1,7 @@
 from pathlib import Path
+import pytest
 import time
-from pyinferno import InfernoProfiler, flamegraph_from_lines, lines_from_stats
+from pyinferno import InfernoProfiler, flamegraph_from_lines, lines_from_stats, InfernoError
 
 
 def test_simple_from_lines():
@@ -27,7 +28,6 @@ def test_profiler_manual(tmp_path):
     time.sleep(0.5)
     p.disable()
     result = p.get_flamegraph()
-    assert result is not None
     assert len(result) > 0
 
     out_path = tmp_path / "output"
@@ -41,7 +41,11 @@ def test_profiler_context_manager(tmp_path):
     with InfernoProfiler(out_path) as p:
         time.sleep(0.5)
     result = p.get_flamegraph()
-    assert result is not None
     assert len(result) > 0
     with open(out_path) as f:
         assert len(f.read()) > 0
+
+
+def test_error_from_rust():
+    with pytest.raises(InfernoError):
+        flamegraph_from_lines(["not a valid trace"])
