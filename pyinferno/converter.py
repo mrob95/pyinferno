@@ -15,7 +15,7 @@ def lines_from_stats(stats: Dict[Tuple, Tuple]) -> List[str]:
             if function.startswith("<") and lineno == 0:
                 trace.append(function)
             else:
-                trace.append('{}:{}:{}'.format(filename, function, lineno))
+                trace.append('{}:{}:{}'.format(filename, lineno, function))
         stack = ';'.join(trace)
         measurement = round(b['ww'] * 1000000)
         result.append(f"{stack} {measurement}")
