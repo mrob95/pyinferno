@@ -9,8 +9,9 @@ from .pyinferno import InfernoError, flamegraph_from_lines
 
 
 class InfernoProfiler:
-    def __init__(self, out_path: str | Path | None = None):
+    def __init__(self, out_path: str | Path | None = None, title: str | None = None):
         self.out_path = out_path
+        self.title = title
         self.profiler = Profile()
         self.enabled = False
 
@@ -23,20 +24,20 @@ class InfernoProfiler:
         self.enabled = False
         self.flamegraph = self.get_flamegraph()
 
-    def get_flamegraph(self) -> str:
+    def get_flamegraph(self, title: str | None = None) -> str:
         if self.enabled:
             raise InfernoError("Cannot get_flamegraph until after InfernoProfiler.disable has been called.")
 
         self.profiler.create_stats()
         stats = pstats.Stats(self.profiler)
         lines = lines_from_stats(stats.stats)
-        return flamegraph_from_lines(lines)
+        return flamegraph_from_lines(lines, title)
 
-    def write_flamegraph(self, out_path: str | Path):
+    def write_flamegraph(self, out_path: str | Path, title: str | None = None):
         if self.enabled:
             raise InfernoError("Cannot write_flamegraph until after InfernoProfiler.disable has been called.")
 
-        flamegraph = self.get_flamegraph()
+        flamegraph = self.get_flamegraph(title)
         with open(out_path, "w+") as f:
             f.write(flamegraph)
 
@@ -47,4 +48,4 @@ class InfernoProfiler:
     def __exit__(self, type, value, traceback):
         self.disable()
         if self.out_path is not None:
-            self.write_flamegraph(self.out_path)
+            self.write_flamegraph(self.out_path, self.title)
