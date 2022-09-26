@@ -10,4 +10,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.17.1", features = ["extension-module"] }
-inferno = "0.11.7"
+inferno = { git = "https://github.com/mrob95/inferno", rev = "7d29adb" }
