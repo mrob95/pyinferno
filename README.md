@@ -34,7 +34,7 @@ To profile a Python script, you can pass `pyinferno.Renderer` as the renderer to
 pyinstrument -r pyinferno.Renderer -o flamegraph.svg slow.py
 ```
 
-For convenience, `pyinferno` includes its own script which wraps the `pyinferno` CLI:
+For convenience, `pyinferno` includes its own script which wraps the `pyinstrument` CLI:
 ```bash
 pyinferno slow.py
 ```

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pyinferno"
-version = "0.1.3"
+version = "0.2.0"
 author = "Mike Roberts"
 author_email = "mike.roberts.2k10@googlemail.com"
 url = "https://github.com/mrob95/pyinferno"
