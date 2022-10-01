@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from .pyinferno import InfernoError, flamegraph_from_lines
 
-try:
-    from pyinstrument.renderers.base import Renderer
-except ImportError:
-    Renderer = object
+from pyinstrument.renderers.base import Renderer
 
 
 class InfernoRenderer(Renderer):
