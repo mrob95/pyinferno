@@ -1,13 +1,21 @@
 import os
+import subprocess
 import time
 from pathlib import Path
 
 import pytest
+from pyinstrument.profiler import Profiler
 
-from pyinferno import (InfernoError, InfernoProfiler, flamegraph_from_lines,
-                       lines_from_stats)
+from pyinferno import InfernoError, Renderer, flamegraph_from_lines
 
 TITLE = "My fantastic title"
+
+SAMPLE_CODE = """
+import time
+def a():
+    time.sleep(0.2)
+a()"""
+
 
 def test_simple_from_lines():
     testdata = Path("testdata/01_simple_from_lines")
@@ -22,43 +30,50 @@ def test_simple_from_lines():
         assert TITLE in contents
 
 
-def test_convert_stats_to_lines():
-    testdata = Path("testdata/02_convert_stats_to_lines")
-    with open(testdata / "input") as f:
-        sample_stats = f.read()
-    stats = eval(sample_stats)
-    result = "\n".join(lines_from_stats(stats))
-    if os.getenv("TEST_OVERWRITE"):
-        with open(testdata / "output.prof", "w+") as f:
-            f.write(result)
-    with open(testdata / "output.prof") as f:
-        assert result == f.read().strip()
+def test_pyinstrument():
+    p = Profiler()
+    p.start()
+    time.sleep(0.2)
+    p.stop()
+    result = p.output(Renderer(title=TITLE))
+    assert len(result) > 0
+    assert TITLE in result
 
 
-def test_profiler_manual(tmp_path):
-    p = InfernoProfiler()
-    p.enable()
-    time.sleep(0.5)
-    p.disable()
-    result = p.get_flamegraph()
+def test_pyinstrument_default_title():
+    p = Profiler()
+    p.start()
+    time.sleep(0.2)
+    p.stop()
+    result = p.output(Renderer())
     assert len(result) > 0
 
-    out_path = tmp_path / "output"
-    p.write_flamegraph(out_path)
-    with open(out_path) as f:
-        assert len(f.read()) > 0
 
-
-def test_profiler_context_manager(tmp_path):
-    out_path = tmp_path / "output"
-    with InfernoProfiler(out_path, TITLE) as p:
-        time.sleep(0.5)
-    result = p.get_flamegraph()
+def test_profiler_context_manager():
+    with Profiler() as p:
+        time.sleep(0.2)
+    result = p.output(Renderer(title=TITLE))
     assert len(result) > 0
+    assert TITLE in result
+
+
+def test_profiler_cli(tmp_path):
+    code_path = tmp_path / "code.py"
+    out_path = tmp_path / "out.svg"
+    with open(code_path, "w+") as f:
+        f.write(SAMPLE_CODE)
+    subprocess.run([
+        "pyinstrument",
+        "-r", "pyinferno.Renderer",
+        "-p", f"title={TITLE}",
+        "-o",
+        out_path.absolute(),
+        code_path.absolute(),
+    ], check=True)
     with open(out_path) as f:
-        contents = f.read()
-        assert len(contents) > 0
-        assert TITLE in contents
+        result = f.read()
+    assert len(result) > 0
+    assert TITLE in result
 
 
 def test_error_from_rust():

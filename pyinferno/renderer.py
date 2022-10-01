@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+from .pyinferno import InfernoError, flamegraph_from_lines
+
+try:
+    from pyinstrument.renderers.base import Renderer
+except ImportError:
+    Renderer = object
+
+
+class InfernoRenderer(Renderer):
+    output_file_extension = "svg"
+
+    def __init__(self, title: str | None = None):
+        self.title = title
+
+    def render(self, session) -> str:
+        """
+        Return a string that contains the rendered form of `frame`.
+        """
+        samples_per_s = session.sample_count/session.duration
+        lines = []
+        for record in session.frame_records:
+            formatted_frames = []
+            frames, time_spent = record
+            for frame in frames:
+                try:
+                    function, filename, lineno = frame.split("\x00")
+                except ValueError:
+                    raise InfernoError(f"Could not parse frame '{frame}'")
+                formatted_frames.append(":".join((filename, lineno, function)))
+            lines.append(f"{';'.join(formatted_frames)} {round(time_spent*samples_per_s)}")
+        return flamegraph_from_lines(lines, self.title)
