@@ -3,6 +3,7 @@ from __future__ import annotations
 from .pyinferno import InfernoError, flamegraph_from_lines
 
 from pyinstrument.renderers.base import Renderer
+from pyinstrument.session import Session
 
 
 class InfernoRenderer(Renderer):
@@ -14,9 +15,9 @@ class InfernoRenderer(Renderer):
     def should_skip(self, filename: str, function: str) -> bool:
         return filename.startswith("<frozen importlib._bootstrap")
 
-    def render(self, session) -> str:
+    def render(self, session: Session) -> str:
         """
-        Return a string that contains the rendered form of `frame`.
+        Render a pyinstrument Session into an inferno flamegraph.
         """
         samples_per_s = session.sample_count/session.duration
         lines = []
