@@ -17,6 +17,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Framework :: Pytest",
 ]
+dependencies = [
+    "pyinstrument"
+]
 
 [project.scripts]
 pyinferno = "pyinferno.cli:main"
