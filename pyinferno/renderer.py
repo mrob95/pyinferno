@@ -22,7 +22,8 @@ class InfernoRenderer(Renderer):
             frames, time_spent = record
             for frame in frames:
                 try:
-                    function, filename, lineno = frame.split("\x00")
+                    identifier, _, attributes = frame.partition("\x01")
+                    function, filename, lineno = identifier.split("\x00")
                 except ValueError:
                     raise InfernoError(f"Could not parse frame '{frame}'")
                 formatted_frames.append(":".join((filename, lineno, function)))
