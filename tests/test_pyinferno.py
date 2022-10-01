@@ -67,8 +67,8 @@ def test_pyinstrument_cli(tmp_path):
         "-r", "pyinferno.Renderer",
         "-p", f"title={TITLE}",
         "-o",
-        out_path.absolute(),
-        code_path.absolute(),
+        str(out_path.absolute()),
+        str(code_path.absolute()),
     ], check=True)
     with open(out_path) as f:
         result = f.read()
@@ -84,8 +84,8 @@ def test_pyinferno_cli(tmp_path):
     subprocess.run([
         "pyinferno",
         "-o",
-        out_path.absolute(),
-        code_path.absolute(),
+        str(out_path.absolute()),
+        str(code_path.absolute()),
     ], check=True)
     with open(out_path) as f:
         result = f.read()
