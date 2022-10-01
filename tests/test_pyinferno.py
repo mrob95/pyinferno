@@ -57,7 +57,7 @@ def test_profiler_context_manager():
     assert TITLE in result
 
 
-def test_profiler_cli(tmp_path):
+def test_pyinstrument_cli(tmp_path):
     code_path = tmp_path / "code.py"
     out_path = tmp_path / "out.svg"
     with open(code_path, "w+") as f:
@@ -74,6 +74,23 @@ def test_profiler_cli(tmp_path):
         result = f.read()
     assert len(result) > 0
     assert TITLE in result
+
+
+def test_pyinferno_cli(tmp_path):
+    code_path = tmp_path / "code.py"
+    out_path = tmp_path / "out.svg"
+    with open(code_path, "w+") as f:
+        f.write(SAMPLE_CODE)
+    subprocess.run([
+        "pyinferno",
+        "-o",
+        out_path.absolute(),
+        code_path.absolute(),
+    ], check=True)
+    with open(out_path) as f:
+        result = f.read()
+    assert len(result) > 0
+    assert "code.py" in result
 
 
 def test_error_from_rust():

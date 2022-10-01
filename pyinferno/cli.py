@@ -7,12 +7,8 @@ import webbrowser
 
 
 def main():
-    argv = sys.argv[1:]
-    if not argv:
-        print("Usage: pyinferno [-o outfile] [pyinstrument_options] <script> [args]")
-        sys.exit(0)
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage="pyinferno [-o outfile] [pyinstrument_options] <script> [args]")
     parser.add_argument(
         "-o", "--outfile",
         action="store",
@@ -25,6 +21,11 @@ def main():
         outpath = inferno_args.outfile
     else:
         outpath = tempfile.NamedTemporaryFile(prefix="flamegraph-", suffix=".svg", delete=False).name
+
+    argv = sys.argv[1:]
+    if not argv:
+        parser.print_usage()
+        sys.exit(0)
 
     args = [
         "pyinstrument",

@@ -11,5 +11,5 @@ classifiers = [
     "Framework :: Pytest",
 ]
 
-[project.entry-points.pytest11]
-flamegraphs = "pyinferno.pytest_flamegraphs"
+[project.scripts]
+pyinferno = "pyinferno.cli:main"
