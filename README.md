@@ -1,7 +1,8 @@
 # PyInferno
 Python package that renders [pyinstrument](https://github.com/joerick/pyinstrument) profiles as flamegraphs, using the [inferno](https://github.com/jonhoo/inferno) rust crate.
 
-![Example pandas trace](https://github.com/mrob95/pyinferno/blob/master/images/pandas_example.png?raw=true)
+![Example command line usage](https://github.com/mrob95/pyinferno/blob/master/images/example_gif.gif?raw=true)
+![Example output](https://github.com/mrob95/pyinferno/blob/master/images/pandas_example.png?raw=true)
 
 ## Installation
 Install from [PyPi](https://pypi.org/project/pyinferno/):
