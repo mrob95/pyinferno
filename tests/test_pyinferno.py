@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pyinstrument.profiler import Profiler
 
-from pyinferno import InfernoError, Renderer, flamegraph_from_lines
+from pyinferno import InfernoError, Renderer, flamegraph_from_lines, InfernoProfiler
 
 TITLE = "My fantastic title"
 
@@ -49,12 +49,28 @@ def test_pyinstrument_default_title():
     assert len(result) > 0
 
 
-def test_profiler_context_manager():
+def test_pyinstrument_context_manager():
     with Profiler() as p:
         time.sleep(0.2)
     result = p.output(Renderer(title=TITLE))
     assert len(result) > 0
     assert TITLE in result
+
+
+def test_pyinferno_context_manager(tmp_path):
+    out_path = tmp_path / "out.svg"
+    with InfernoProfiler(file=out_path, title=TITLE) as p:
+        time.sleep(0.2)
+    with open(out_path) as f:
+        result = f.read()
+    assert len(result) > 0
+    assert TITLE in result
+
+
+def test_pyinferno_context_manager_raises_with_no_args():
+    with pytest.raises(ValueError):
+        with InfernoProfiler() as p:
+            time.sleep(0.2)
 
 
 def test_pyinstrument_cli(tmp_path):

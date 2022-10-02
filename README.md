@@ -11,7 +11,7 @@ pip install pyinferno
 ```
 ## Usage
 ### Context manager
-To profile a specific piece of code, use the [pyinstrument Profiler class](https://pyinstrument.readthedocs.io/en/latest/guide.html#profile-a-specific-chunk-of-code), then render the result using pyinferno's `InfernoRenderer`:
+To profile a specific piece of code, you can use the [pyinstrument Profiler class](https://pyinstrument.readthedocs.io/en/latest/guide.html#profile-a-specific-chunk-of-code), then render the result using pyinferno's `InfernoRenderer`:
 ```python
 from pyinstrument.profiler import Profiler
 from pyinferno import InfernoRenderer
@@ -23,10 +23,22 @@ def slow():
 with Profiler() as profiler:
     slow()
 
-output = profiler.render(InfernoRenderer(title="slow"))
+output = profiler.output(InfernoRenderer(title="slow"))
 
 with open("flamegraph.svg", "w+") as f:
     f.write(output)
+```
+
+For convenience, the same result can be achieved using the `InfernoProfiler` context manager:
+```python
+from pyinferno import InfernoProfiler
+import time
+
+def slow():
+    time.sleep(0.5)
+
+with InfernoProfiler(file="flamegraph.svg", auto_open=True, title="slow"):
+    slow()
 ```
 
 ### Command-line
