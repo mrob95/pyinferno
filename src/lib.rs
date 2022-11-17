@@ -10,6 +10,7 @@ fn flamegraph_from_lines(lines: Vec<&str>, title: Option<String>) -> PyResult<St
     let colors = Palette::Multi(inferno::flamegraph::color::MultiPalette::Python);
     let mut opts = Options::default();
     opts.colors = colors;
+    opts.font_type = "monospace".to_string();
     if let Some(s) = title {
         opts.title = s
     }

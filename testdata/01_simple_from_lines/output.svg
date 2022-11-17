@@ -1,5 +1,5 @@
 <?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg version="1.1" width="1200" height="150" onload="init(evt)" viewBox="0 0 1200 150" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:fg="http://github.com/jonhoo/inferno"><!--Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples.--><!--NOTES: --><defs><linearGradient id="background" y1="0" y2="1" x1="0" x2="0"><stop stop-color="#eeeeee" offset="5%"/><stop stop-color="#eeeeb0" offset="95%"/></linearGradient></defs><style type="text/css">
-text { font-family:"Verdana"; font-size:12px; fill:rgb(0,0,0); }
+text { font-family:monospace; font-size:12px; fill:rgb(0,0,0); }
 #title { text-anchor:middle; font-size:17px; }
 #matched { text-anchor:end; }
 #search { text-anchor:end; opacity:0.1; cursor:pointer; }
@@ -19,7 +19,7 @@ text { font-family:"Verdana"; font-size:12px; fill:rgb(0,0,0); }
         var fluiddrawing = true;
         var truncate_text_right = false;
     ]]><![CDATA["use strict";
-var details, searchbtn, unzoombtn, matchedtxt, svg, searching, frames;
+var details, searchbtn, unzoombtn, matchedtxt, svg, searching, frames, known_font_width;
 function init(evt) {
     details = document.getElementById("details").firstChild;
     searchbtn = document.getElementById("search");
@@ -27,6 +27,7 @@ function init(evt) {
     matchedtxt = document.getElementById("matched");
     svg = document.getElementsByTagName("svg")[0];
     frames = document.getElementById("frames");
+    known_font_width = get_monospace_width(frames);
     total_samples = parseInt(frames.attributes.total_samples.value);
     searching = 0;
 
@@ -44,6 +45,9 @@ function init(evt) {
         svg.removeAttribute("width");
         // Edge requires us to have a viewBox that gets updated with size changes.
         var isEdge = /Edge\/\d./i.test(navigator.userAgent);
+        if (!isEdge) {
+            svg.removeAttribute("viewBox");
+        }
         var update_for_width_change = function() {
             if (isEdge) {
                 svg.attributes.viewBox.value = "0 0 " + svg.width.baseVal.value + " " + svg.height.baseVal.value;
@@ -53,10 +57,7 @@ function init(evt) {
             frames.attributes.width.value = svg.width.baseVal.value - xpad * 2;
 
             // Text truncation needs to be adjusted for the current width.
-            var el = frames.children;
-            for(var i = 0; i < el.length; i++) {
-                update_text(el[i]);
-            }
+            update_text_for_elements(frames.children);
 
             // Keep search elements at a fixed distance from right edge.
             var svgWidth = svg.width.baseVal.value;
@@ -71,9 +72,6 @@ function init(evt) {
             unzoom();
             update_for_width_change();
             restore_state();
-            if (!isEdge) {
-                svg.removeAttribute("viewBox");
-            }
         }, 0);
     } else {
         restore_state();
@@ -182,12 +180,88 @@ function g_to_func(e) {
     // name before it's searched, do it here before returning.
     return (func);
 }
+function get_monospace_width(frames) {
+    // Given the id="frames" element, return the width of text characters if
+    // this is a monospace font, otherwise return 0.
+    text = find_child(frames.children[0], "text");
+    originalContent = text.textContent;
+    text.textContent = "!";
+    bangWidth = text.getComputedTextLength();
+    text.textContent = "W";
+    wWidth = text.getComputedTextLength();
+    text.textContent = originalContent;
+    if (bangWidth === wWidth) {
+        return bangWidth;
+    } else {
+        return 0;
+    }
+}
+function update_text_for_elements(elements) {
+    // In order to render quickly in the browser, you want to do one pass of
+    // reading attributes, and one pass of mutating attributes. See
+    // https://web.dev/avoid-large-complex-layouts-and-layout-thrashing/ for details.
+
+    // Fall back to inefficient calculation, if we're variable-width font.
+    // TODO This should be optimized somehow too.
+    if (known_font_width === 0) {
+        for (var i = 0; i < elements.length; i++) {
+            update_text(elements[i]);
+        }
+        return;
+    }
+
+    var textElemNewAttributes = [];
+    for (var i = 0; i < elements.length; i++) {
+        var e = elements[i];
+        var r = find_child(e, "rect");
+        var t = find_child(e, "text");
+        var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
+        var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+        var newX = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+
+        // Smaller than this size won't fit anything
+        if (w < 2 * known_font_width) {
+            textElemNewAttributes.push([newX, ""]);
+            continue;
+        }
+
+        // Fit in full text width
+        if (txt.length * known_font_width < w) {
+            textElemNewAttributes.push([newX, txt]);
+            continue;
+        }
+
+        var substringLength = Math.floor(w / known_font_width) - 2;
+        if (truncate_text_right) {
+            // Truncate the right side of the text.
+            textElemNewAttributes.push([newX, txt.substring(0, substringLength) + ".."]);
+            continue;
+        } else {
+            // Truncate the left side of the text.
+            textElemNewAttributes.push([newX, ".." + txt.substring(txt.length - substringLength, txt.length)]);
+            continue;
+        }
+    }
+
+    console.assert(textElemNewAttributes.length === elements.length, "Resize failed, please file a bug at https://github.com/jonhoo/inferno/");
+
+    // Now that we know new textContent, set it all in one go so we don't refresh a bazillion times.
+    for (var i = 0; i < elements.length; i++) {
+        var e = elements[i];
+        var values = textElemNewAttributes[i];
+        var t = find_child(e, "text");
+        t.attributes.x.value = values[0];
+        t.textContent = values[1];
+    }
+}
+
 function update_text(e) {
     var r = find_child(e, "rect");
     var t = find_child(e, "text");
     var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
     var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
     t.attributes.x.value = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+
     // Smaller than this size won't fit anything
     if (w < 2 * fontsize * fontwidth) {
         t.textContent = "";
@@ -195,7 +269,7 @@ function update_text(e) {
     }
     t.textContent = txt;
     // Fit in full text width
-    if (/^ *\$/.test(txt) || t.getComputedTextLength() < w)
+    if (t.getComputedTextLength() < w)
         return;
     if (truncate_text_right) {
         // Truncate the right side of the text.
@@ -262,6 +336,7 @@ function zoom(node) {
     var ymin = parseFloat(attr.y.value);
     unzoombtn.classList.remove("hide");
     var el = frames.children;
+    var to_update_text = [];
     for (var i = 0; i < el.length; i++) {
         var e = el[i];
         var a = find_child(e, "rect").attributes;
@@ -278,7 +353,7 @@ function zoom(node) {
             if (ex <= xmin && (ex+ew) >= xmax) {
                 e.classList.add("parent");
                 zoom_parent(e);
-                update_text(e);
+                to_update_text.push(e);
             }
             // not in current path
             else
@@ -292,10 +367,11 @@ function zoom(node) {
             }
             else {
                 zoom_child(e, xmin, width);
-                update_text(e);
+                to_update_text.push(e);
             }
         }
     }
+    update_text_for_elements(to_update_text);
 }
 function unzoom() {
     unzoombtn.classList.add("hide");
@@ -304,8 +380,8 @@ function unzoom() {
         el[i].classList.remove("parent");
         el[i].classList.remove("hide");
         zoom_reset(el[i]);
-        update_text(el[i]);
     }
+    update_text_for_elements(el);
 }
 // search
 function reset_search() {
@@ -412,4 +488,4 @@ function search(term) {
 function format_percent(n) {
     return n.toFixed(4) + "%";
 }
-]]></script><rect x="0" y="0" width="100%" height="150" fill="url(#background)"/><text id="title" x="50.0000%" y="24.00">My fantastic title</text><text id="details" x="10" y="133.00"> </text><text id="unzoom" class="hide" x="10" y="24.00">Reset Zoom</text><text id="search" x="1190" y="24.00">Search</text><text id="matched" x="1190" y="133.00"> </text><svg id="frames" x="10" width="1180" total_samples="500601"><g><title>all (500,601 samples, 100%)</title><rect x="0.0000%" y="101" width="100.0000%" height="15" fill="rgb(227,0,7)" fg:x="0" fg:w="500601"/><text x="0.2500%" y="111.50"></text></g><g><title>/home/mike/profiling/test_cp.py:12:a (500,601 samples, 100.00%)</title><rect x="0.0000%" y="85" width="100.0000%" height="15" fill="rgb(217,0,24)" fg:x="0" fg:w="500601"/><text x="0.2500%" y="95.50">/home/mike/profiling/test_cp.py:12:a</text></g><g><title>/home/mike/profiling/test_cp.py:9:b (500,597 samples, 100.00%)</title><rect x="0.0008%" y="69" width="99.9992%" height="15" fill="rgb(221,193,54)" fg:x="4" fg:w="500597"/><text x="0.2508%" y="79.50">/home/mike/profiling/test_cp.py:9:b</text></g><g><title>/home/mike/profiling/test_cp.py:6:c (500,591 samples, 100.00%)</title><rect x="0.0020%" y="53" width="99.9980%" height="15" fill="rgb(248,212,6)" fg:x="10" fg:w="500591"/><text x="0.2520%" y="63.50">/home/mike/profiling/test_cp.py:6:c</text></g><g><title>~:0:&lt;built-in method time.sleep&gt; (500,573 samples, 99.99%)</title><rect x="0.0056%" y="37" width="99.9944%" height="15" fill="rgb(208,68,35)" fg:x="28" fg:w="500573"/><text x="0.2556%" y="47.50">~:0:&lt;built-in method time.sleep&gt;</text></g></svg></svg>
+]]></script><rect x="0" y="0" width="100%" height="150" fill="url(#background)"/><text id="title" x="50.0000%" y="24.00">My fantastic title</text><text id="details" x="10" y="133.00"> </text><text id="unzoom" class="hide" x="10" y="24.00">Reset Zoom</text><text id="search" x="1190" y="24.00">Search</text><text id="matched" x="1190" y="133.00"> </text><svg id="frames" x="10" width="1180" total_samples="500601"><g><title>all (500,601 samples, 100%)</title><rect x="0.0000%" y="101" width="100.0000%" height="15" fill="rgb(200,50,50)" fg:x="0" fg:w="500601"/><text x="0.2500%" y="111.50"></text></g><g><title>/home/mike/profiling/test_cp.py:12:a (500,601 samples, 100.00%)</title><rect x="0.0000%" y="85" width="100.0000%" height="15" fill="rgb(200,50,50)" fg:x="0" fg:w="500601"/><text x="0.2500%" y="95.50">/home/mike/profiling/test_cp.py:12:a</text></g><g><title>/home/mike/profiling/test_cp.py:9:b (500,597 samples, 100.00%)</title><rect x="0.0008%" y="69" width="99.9992%" height="15" fill="rgb(246,117,117)" fg:x="4" fg:w="500597"/><text x="0.2508%" y="79.50">/home/mike/profiling/test_cp.py:9:b</text></g><g><title>/home/mike/profiling/test_cp.py:6:c (500,591 samples, 100.00%)</title><rect x="0.0020%" y="53" width="99.9980%" height="15" fill="rgb(250,123,123)" fg:x="10" fg:w="500591"/><text x="0.2520%" y="63.50">/home/mike/profiling/test_cp.py:6:c</text></g><g><title>~:0:&lt;built-in method time.sleep&gt; (500,573 samples, 99.99%)</title><rect x="0.0056%" y="37" width="99.9944%" height="15" fill="rgb(216,73,73)" fg:x="28" fg:w="500573"/><text x="0.2556%" y="47.50">~:0:&lt;built-in method time.sleep&gt;</text></g></svg></svg>
