@@ -7,7 +7,6 @@ name = "pyinferno"
 version = "0.2.6"
 author = "Mike Roberts"
 author_email = "mike.roberts.2k10@googlemail.com"
-url = "https://github.com/mrob95/pyinferno"
 description = "Simple python flame graph generator"
 long_description = "file: README.md"
 long_description_content_type = "text/markdown"
@@ -19,6 +18,9 @@ classifiers = [
 dependencies = [
     "pyinstrument"
 ]
+
+[project.urls]
+Repository = "https://github.com/mrob95/pyinferno"
 
 [project.scripts]
 pyinferno = "pyinferno.cli:main"
